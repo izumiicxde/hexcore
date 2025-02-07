@@ -18,6 +18,33 @@ func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
+// Initialize subjects for a user
+func (s *Store) InitializeTable(userID uint) error {
+	// Predefined subjects
+	subjects := []string{"LANG", "ADA", "OE", "SE", "IT", "ENG", "IC", "LAB ADA", "LAB IT"}
+
+	// Check if subjects already exist for this user
+	var count int64
+	s.db.Model(&types.Subject{}).Where("user_id = ?", userID).Count(&count)
+	if count > 0 {
+		return errors.New("subjects already initialized")
+	}
+
+	// Insert subjects with 0 attendance
+	for _, subject := range subjects {
+		sub := types.Subject{
+			UserId:          userID,
+			Name:            subject,
+			AttendedClasses: 0,
+			TotalTaken:      0,
+		}
+		if err := s.db.Create(&sub).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CreateUser inserts a new user into the database with validation
 func (s *Store) CreateUser(user *types.User) error {
 	// Validate user struct before inserting

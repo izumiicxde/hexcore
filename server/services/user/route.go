@@ -24,6 +24,7 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 
 	router.Get("/users", h.getAll)
 	router.Get("/users/:id", h.getById)
+
 	router.Put("/users/:id", h.update)
 	router.Delete("/users/:id", h.delete)
 }
@@ -31,6 +32,7 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 func (h *Handler) login(c *fiber.Ctx) error {
 	// Check if a valid token is already present in the cookies
 	cookie := c.Cookies("token")
+
 	if cookie != "" {
 		claims, err := auth.ValidateToken(cookie)
 		if err == nil {
@@ -104,6 +106,11 @@ func (h *Handler) register(c *fiber.Ctx) error {
 	// Create user in the database
 	if err := h.store.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	//  Call InitializeTable here after user creation
+	if err := h.store.InitializeTable(user.ID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not initialize subjects"})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(user)

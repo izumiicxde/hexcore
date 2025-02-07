@@ -1,6 +1,7 @@
 package api
 
 import (
+	"hexcore/services/attendance"
 	"hexcore/services/user"
 	"log/slog"
 
@@ -22,8 +23,12 @@ func (s *APIServer) Run() error {
 	api := app.Group("/api/v1")
 
 	userstore := user.NewStore(s.db)
-	handler := user.NewHandler(userstore)
-	handler.RegisterRoutes(api)
+	userhandler := user.NewHandler(userstore)
+	userhandler.RegisterRoutes(api)
+
+	attendancestore := attendance.NewAttendanceStore(s.db)
+	attendancehandler := attendance.NewHandler(attendancestore)
+	attendancehandler.RegisterRoutes(api)
 
 	slog.Info("Server running at port " + s.addr)
 	return app.Listen(s.addr)

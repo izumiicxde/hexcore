@@ -19,6 +19,7 @@ func main() {
 	}
 	if err = db.AutoMigrate(
 		&types.User{},
+		&types.Subject{},
 	); err != nil {
 		slog.Error(err.Error())
 	}
