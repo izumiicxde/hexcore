@@ -1,10 +1,13 @@
 package user
 
 import (
+	"hexcore/services/auth"
 	"hexcore/types"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -17,10 +20,72 @@ func NewHandler(store types.UserStore) *Handler {
 
 func (h *Handler) RegisterRoutes(router fiber.Router) {
 	router.Post("/users/register", h.register)
+	router.Post("/users/login", h.login)
+
 	router.Get("/users", h.getAll)
 	router.Get("/users/:id", h.getById)
 	router.Put("/users/:id", h.update)
 	router.Delete("/users/:id", h.delete)
+}
+
+func (h *Handler) login(c *fiber.Ctx) error {
+	// Check if a valid token is already present in the cookies
+	cookie := c.Cookies("token")
+	if cookie != "" {
+		claims, err := auth.ValidateToken(cookie)
+		if err == nil {
+			// Token is valid, return user data
+			userID := int(claims["user_id"].(float64))
+			user, err := h.store.GetUserById(userID)
+			if err == nil {
+				return c.JSON(fiber.Map{
+					"message": "already logged in",
+					"user":    user,
+				})
+			}
+		}
+	}
+
+	var req struct {
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
+	}
+
+	// Fetch user by username
+	user, err := h.store.GetUserByUsername(req.Username)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
+	}
+
+	// Compare password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
+	}
+
+	// Generate JWT token
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not generate token"})
+	}
+
+	// Set token in an HTTP-only cookie (prevents JavaScript access)
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    token,
+		Expires:  time.Now().Add(24 * time.Hour), // Expires in 24 hours
+		HTTPOnly: true,
+		Secure:   true, // Use true if deploying on HTTPS
+		SameSite: "Strict",
+	})
+
+	return c.JSON(fiber.Map{
+		"message": "success",
+		"user":    user,
+	})
 }
 
 // register handles user registration
@@ -30,7 +95,12 @@ func (h *Handler) register(c *fiber.Ctx) error {
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
 	}
-
+	p, err := auth.HashPassword(user.Password)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	user.Password = p
+	user.Role = "user"
 	// Create user in the database
 	if err := h.store.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
