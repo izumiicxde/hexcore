@@ -107,12 +107,6 @@ func (h *Handler) register(c *fiber.Ctx) error {
 	if err := h.store.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-
-	//  Call InitializeTable here after user creation
-	if err := h.store.InitializeTable(user.ID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not initialize subjects"})
-	}
-
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 

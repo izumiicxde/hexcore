@@ -18,33 +18,6 @@ func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
-// Initialize subjects for a user
-func (s *Store) InitializeTable(userID uint) error {
-	// Predefined subjects
-	subjects := []string{"LANG", "ADA", "OE", "SE", "IT", "ENG", "IC", "LAB ADA", "LAB IT"}
-
-	// Check if subjects already exist for this user
-	var count int64
-	s.db.Model(&types.Subject{}).Where("user_id = ?", userID).Count(&count)
-	if count > 0 {
-		return errors.New("subjects already initialized")
-	}
-
-	// Insert subjects with 0 attendance
-	for _, subject := range subjects {
-		sub := types.Subject{
-			UserId:          userID,
-			Name:            subject,
-			AttendedClasses: 0,
-			TotalTaken:      0,
-		}
-		if err := s.db.Create(&sub).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // CreateUser inserts a new user into the database with validation
 func (s *Store) CreateUser(user *types.User) error {
 	// Validate user struct before inserting
@@ -52,7 +25,10 @@ func (s *Store) CreateUser(user *types.User) error {
 		return err
 	}
 
-	return s.db.Create(user).Error
+	if err := s.db.Create(user).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetUserByUsername retrieves a user by username
@@ -119,4 +95,45 @@ func (s *Store) DeleteUser(id int) error {
 
 	// Otherwise, soft delete the user
 	return s.db.Delete(&user).Error
+}
+
+// init the subjectSchedule table
+func InitializeSubjectSchedule(db *gorm.DB) error {
+	// Check if table already has data
+	var count int64
+	db.Model(&types.SubjectSchedule{}).Count(&count)
+	if count > 0 {
+		return nil // Already initialized
+	}
+
+	// Insert predefined schedule
+	schedules := []types.SubjectSchedule{
+		{Name: "ADA", Day: "Wednesday"},
+		{Name: "ADA", Day: "Thursday"},
+		{Name: "ADA", Day: "Friday"},
+		{Name: "ADA", Day: "Saturday"},
+		{Name: "IT", Day: "Monday"},
+		{Name: "IT", Day: "Wednesday"},
+		{Name: "IT", Day: "Friday"},
+		{Name: "IT", Day: "Saturday"},
+		{Name: "SE", Day: "Monday"},
+		{Name: "SE", Day: "Wednesday"},
+		{Name: "SE", Day: "Friday"},
+		{Name: "SE", Day: "Saturday"},
+		{Name: "IC", Day: "Tuesday"},
+		{Name: "IC", Day: "Thursday"},
+		{Name: "LANG", Day: "Monday"},
+		{Name: "LANG", Day: "Wednesday"},
+		{Name: "LANG", Day: "Thursday"},
+		{Name: "LANG", Day: "Friday"},
+		{Name: "ENG", Day: "Monday"},
+		{Name: "ENG", Day: "Tuesday"},
+		{Name: "ENG", Day: "Wednesday"},
+		{Name: "OE", Day: "Tuesday"},
+		{Name: "OE", Day: "Thursday"},
+		{Name: "ADA Lab", Day: "Friday"},
+		{Name: "IT Lab", Day: "Tuesday"},
+	}
+
+	return db.Create(&schedules).Error
 }

@@ -1,22 +1,40 @@
 package types
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
-type Subject struct {
-	gorm.Model
-	UserId          uint   `json:"user_id,omitempty" gorm:"index"`
-	Name            string `json:"name,omitempty" gorm:"uniqueIndex:student_subject"`
-	MaxClasses      int    `json:"max_classes,omitempty"`      // Total planned classes (e.g., 80)
-	TotalTaken      int    `json:"total_taken,omitempty"`      // How many classes have been conducted so far
-	AttendedClasses int    `json:"attended_classes,omitempty"` // How many the student attended
+type AttendanceStore interface {
+	MarkAttendance(*Attendance) error
 }
 
-type AttendanceStore interface {
-	GetSubject(userID uint, subjectName string) (*Subject, error)
-	UpdateAttendance(userID uint, subjectName string, attended bool) (*Subject, error)
-	GetUserSubjects(userID uint) ([]Subject, error)
+type SubjectSchedule struct {
+	gorm.Model
+	Name string `json:"name" gorm:"index"` // Matches the Subject.Name
+	Day  string `json:"day" gorm:"index"`  // "Monday", "Tuesday", etc.
+}
+
+type Attendance struct {
+	gorm.Model
+	UserId    uint      `gorm:"index;constraint:OnDelete:CASCADE;" validate:"required" json:"user_id"`
+	SubjectId uint      `gorm:"index;constraint:OnDelete:CASCADE;" validate:"required" json:"subject_id"`
+	Status    bool      `json:"status" validate:"required"`
+	Date      time.Time `json:"date"  gorm:"index;uniqueIndex:user_subject_date" validate:"required"`
+
+	// Relations
+	User    User    `gorm:"foreignKey:UserId"`
+	Subject Subject `gorm:"foreignKey:SubjectId"`
+}
+
+type Subject struct {
+	gorm.Model
+	UserId          uint   `json:"user_id" gorm:"index;constraint:OnDelete:CASCADE;"`
+	Name            string `json:"name" gorm:"uniqueIndex:user_subject"` // Unique per user
+	MaxClasses      int    `json:"max_classes"`
+	TotalTaken      int    `json:"total_taken"`
+	AttendedClasses int    `json:"attended_classes"`
 }
 
 type UserStore interface {
@@ -26,8 +44,6 @@ type UserStore interface {
 	GetUserById(id int) (*User, error)
 	UpdateUser(user *User) error
 	DeleteUser(id int) error
-
-	InitializeTable(userId uint) error
 }
 
 type User struct {

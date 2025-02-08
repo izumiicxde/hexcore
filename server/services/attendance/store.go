@@ -1,52 +1,32 @@
 package attendance
 
 import (
+	"fmt"
+	"hexcore/config"
 	"hexcore/types"
+	"time"
 
 	"gorm.io/gorm"
 )
 
-type AttendanceStore struct {
+type Store struct {
 	db *gorm.DB
 }
 
-func NewAttendanceStore(db *gorm.DB) *AttendanceStore {
-	return &AttendanceStore{db}
+func NewAttendanceStore(db *gorm.DB) *Store {
+	return &Store{db}
 }
 
-// Get a subject by userID & subject name
-func (s *AttendanceStore) GetSubject(userID uint, subjectName string) (*types.Subject, error) {
-	subject := new(types.Subject)
-	if err := s.db.Where("user_id = ? AND name = ?", userID, subjectName).First(subject).Error; err != nil {
-		return nil, err
-	}
-	return subject, nil
-}
-
-// Update attendance
-func (s *AttendanceStore) UpdateAttendance(userID uint, subjectName string, attended bool) (*types.Subject, error) {
-	subject, err := s.GetSubject(userID, subjectName)
-	if err != nil {
-		return nil, err
+func (s *Store) MarkAttendance(a *types.Attendance) error {
+	if err := config.Validator.Struct(a); err != nil {
+		return err
 	}
 
-	subject.TotalTaken++
-	if attended {
-		subject.AttendedClasses++
-	}
+	a.Date = time.Now()
+	result := s.db.Create(a)
 
-	if err := s.db.Save(subject).Error; err != nil {
-		return nil, err
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("error creating attendance")
 	}
-
-	return subject, nil
-}
-
-// Get all subjects for a user
-func (s *AttendanceStore) GetUserSubjects(userID uint) ([]types.Subject, error) {
-	var subjects []types.Subject
-	if err := s.db.Where("user_id = ?", userID).Find(&subjects).Error; err != nil {
-		return nil, err
-	}
-	return subjects, nil
+	return result.Error
 }
