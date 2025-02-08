@@ -28,7 +28,24 @@ func (s *Store) CreateUser(user *types.User) error {
 	if err := s.db.Create(user).Error; err != nil {
 		return err
 	}
-	return nil
+
+	var schedules []types.SubjectSchedule
+	if err := s.db.Find(&schedules).Error; err != nil {
+		return err
+	}
+
+	// Assign subjects to the new user
+	var subjects []types.Subject
+	for _, schedule := range schedules {
+		subjects = append(subjects, types.Subject{
+			UserId:     user.ID,
+			Name:       schedule.Name,
+			MaxClasses: 0, // Set to default or calculated based on schedules
+		})
+	}
+
+	// Insert subjects
+	return s.db.Create(&subjects).Error
 }
 
 // GetUserByUsername retrieves a user by username

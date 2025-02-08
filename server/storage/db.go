@@ -28,32 +28,39 @@ func InitializeSubjectSchedule(db *gorm.DB) error {
 
 	// Insert predefined schedule
 	schedules := []types.SubjectSchedule{
-		{Name: "ADA", Day: "Wednesday"},
-		{Name: "ADA", Day: "Thursday"},
-		{Name: "ADA", Day: "Friday"},
-		{Name: "ADA", Day: "Saturday"},
-		{Name: "IT", Day: "Monday"},
-		{Name: "IT", Day: "Wednesday"},
-		{Name: "IT", Day: "Friday"},
-		{Name: "IT", Day: "Saturday"},
-		{Name: "SE", Day: "Monday"},
-		{Name: "SE", Day: "Wednesday"},
-		{Name: "SE", Day: "Friday"},
-		{Name: "SE", Day: "Saturday"},
-		{Name: "IC", Day: "Tuesday"},
-		{Name: "IC", Day: "Thursday"},
-		{Name: "LANG", Day: "Monday"},
-		{Name: "LANG", Day: "Wednesday"},
-		{Name: "LANG", Day: "Thursday"},
-		{Name: "LANG", Day: "Friday"},
-		{Name: "ENG", Day: "Monday"},
-		{Name: "ENG", Day: "Tuesday"},
-		{Name: "ENG", Day: "Wednesday"},
-		{Name: "ENG", Day: "Friday"},
-		{Name: "OE", Day: "Tuesday"},
-		{Name: "OE", Day: "Thursday"},
-		{Name: "ADA Lab", Day: "Tuesday"},
-		{Name: "IT Lab", Day: "Friday"},
+		{Name: "ADA", Day: "Wednesday", StartTime: "8:30 AM", EndTime: "9:30 AM"},
+		{Name: "ADA", Day: "Thursday", StartTime: "9:30 AM", EndTime: "10:30 AM"},
+		{Name: "ADA", Day: "Friday", StartTime: "9:30 AM", EndTime: "10:30 AM"},
+		{Name: "ADA", Day: "Saturday", StartTime: "8:30 AM", EndTime: "9:30 AM"},
+
+		{Name: "IT", Day: "Monday", StartTime: "9:30 AM", EndTime: "10:30 AM"},
+		{Name: "IT", Day: "Wednesday", StartTime: "11:45 AM", EndTime: "12:45 PM"},
+		{Name: "IT", Day: "Friday", StartTime: "10:45 AM", EndTime: "11:45 AM"},
+		{Name: "IT", Day: "Saturday", StartTime: "9:30 AM", EndTime: "10:30 AM"},
+
+		{Name: "SE", Day: "Monday", StartTime: "1:30 PM", EndTime: "2:30 PM"},
+		{Name: "SE", Day: "Tuesday", StartTime: "8:30 AM", EndTime: "9:30 AM"},
+		{Name: "SE", Day: "Wednesday", StartTime: "1:30 PM", EndTime: "2:30 PM"},
+		{Name: "SE", Day: "Saturday", StartTime: "10:45 AM", EndTime: "11:45 AM"},
+
+		{Name: "IC", Day: "Wednesday", StartTime: "9:30 AM", EndTime: "10:30 AM"},
+		{Name: "IC", Day: "Thursday", StartTime: "10:45 AM", EndTime: "11:45 AM"},
+
+		{Name: "LANG", Day: "Monday", StartTime: "10:45 AM", EndTime: "11:45 AM"},
+		{Name: "LANG", Day: "Wednesday", StartTime: "10:45 AM", EndTime: "11:45 AM"},
+		{Name: "LANG", Day: "Thursday", StartTime: "11:45 AM", EndTime: "12:45 PM"},
+		{Name: "LANG", Day: "Friday", StartTime: "11:45 AM", EndTime: "12:45 PM"},
+
+		{Name: "ENG", Day: "Monday", StartTime: "8:30 AM", EndTime: "9:30 AM"},
+		{Name: "ENG", Day: "Tuesday", StartTime: "2:30 PM", EndTime: "3:30 PM"},
+		{Name: "ENG", Day: "Wednesday", StartTime: "2:30 PM", EndTime: "3:30 PM"},
+		{Name: "ENG", Day: "Friday", StartTime: "8:30 AM", EndTime: "9:30 AM"},
+
+		{Name: "OE", Day: "Tuesday", StartTime: "1:30 PM", EndTime: "2:30 PM"},
+		{Name: "OE", Day: "Thursday", StartTime: "1:30 PM", EndTime: "2:30 PM"},
+
+		{Name: "ADA Lab", Day: "Tuesday", StartTime: "9:30 AM", EndTime: "11:45 AM"},
+		{Name: "IT Lab", Day: "Friday", StartTime: "1:30 PM", EndTime: "4:30 PM"},
 	}
 
 	return db.Create(&schedules).Error

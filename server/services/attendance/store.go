@@ -1,10 +1,8 @@
 package attendance
 
 import (
-	"fmt"
 	"hexcore/config"
 	"hexcore/types"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -17,16 +15,35 @@ func NewAttendanceStore(db *gorm.DB) *Store {
 	return &Store{db}
 }
 
-func (s *Store) MarkAttendance(a *types.Attendance) error {
-	if err := config.Validator.Struct(a); err != nil {
+func (s *Store) MarkAttendance(userId int, req *types.AttendanceRequest) error {
+	if err := config.Validator.Struct(req); err != nil {
 		return err
 	}
 
-	a.Date = time.Now()
-	result := s.db.Create(a)
-
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("error creating attendance")
+	// Find the Subject ID for this user
+	subject := new(types.Subject)
+	if err := s.db.Where("user_id = ? AND name = ?", userId, req.SubjectName).First(subject).Error; err != nil {
+		return err
 	}
-	return result.Error
+
+	// Insert Attendance
+	attendance := types.Attendance{
+		UserId:    uint(userId),
+		SubjectId: subject.ID,
+		Status:    req.Status,
+		Date:      req.Date,
+	}
+
+	if err := s.db.Create(&attendance).Error; err != nil {
+		return err
+	}
+
+	// Update Subject Stats
+	if req.Status {
+		subject.AttendedClasses++
+	}
+	subject.TotalTaken++
+	s.db.Save(&subject)
+
+	return nil
 }

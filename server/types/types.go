@@ -7,13 +7,20 @@ import (
 )
 
 type AttendanceStore interface {
-	MarkAttendance(*Attendance) error
+	MarkAttendance(int, *AttendanceRequest) error
+}
+type AttendanceRequest struct {
+	SubjectName string    `json:"subject_name" validate:"required"`
+	Status      bool      `json:"status" validate:"required"`
+	Date        time.Time `json:"date" validate:"required"`
 }
 
 type SubjectSchedule struct {
 	gorm.Model
-	Name string `json:"name" gorm:"index"` // Matches the Subject.Name
-	Day  string `json:"day" gorm:"index"`  // "Monday", "Tuesday", etc.
+	Name      string `json:"name" gorm:"index"`                  // Matches the Subject.Name
+	Day       string `json:"day" gorm:"index"`                   // "Monday", "Tuesday", etc.
+	StartTime string `json:"start_time" gorm:"type:varchar(10)"` // Example: "10:00 AM"
+	EndTime   string `json:"end_time" gorm:"type:varchar(10)"`   // Example: "11:00 AM"
 }
 
 type Attendance struct {

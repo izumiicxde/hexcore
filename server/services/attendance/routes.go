@@ -24,6 +24,7 @@ func (h *Handler) AuthMiddleware(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized", "message": err.Error()})
 	}
+
 	userId := int(res["user_id"].(float64))
 	c.Locals("userId", userId)
 	return c.Next()
@@ -34,13 +35,13 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 
 	router.Post("/attendance", h.MarkAttendance)
 }
+
 func (h *Handler) MarkAttendance(c *fiber.Ctx) error {
-	req := new(types.Attendance)
+	userId := c.Locals("userId").(int)
+
+	req := new(types.AttendanceRequest)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input: " + err.Error()})
 	}
-	if err := h.store.MarkAttendance(req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "attendance updated"})
+	h.store.MarkAttendance(userId, req)
 }
