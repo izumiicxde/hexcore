@@ -6,7 +6,6 @@ import (
 
 	"hexcore/cmd/api"
 	"hexcore/config"
-	"hexcore/services/user"
 	"hexcore/storage"
 	"hexcore/types"
 
@@ -22,7 +21,7 @@ func main() {
 	}
 	migrate(db)
 
-	if err = user.InitializeSubjectSchedule(db); err != nil {
+	if err = storage.InitializeSubjectSchedule(db); err != nil {
 		slog.Error("error initializing subject schedule", "err", err)
 	}
 
@@ -39,6 +38,7 @@ func migrate(db *gorm.DB) {
 		&types.User{},
 		&types.Subject{},
 		&types.Attendance{},
+		&types.SubjectSchedule{},
 	); err != nil {
 		slog.Error("error migrating the db", "err", err.Error())
 		os.Exit(1)
