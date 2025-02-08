@@ -47,3 +47,11 @@ func (s *Store) MarkAttendance(userId int, req *types.AttendanceRequest) error {
 
 	return nil
 }
+
+func (s *Store) GetAttendaceSummary(userId int) ([]types.Attendance, error) {
+	var attendances []types.Attendance
+	if err := s.db.Where("user_id = ?", userId).Find(&attendances).Error; err != nil {
+		return nil, err
+	}
+	return attendances, nil
+}

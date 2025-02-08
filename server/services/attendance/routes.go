@@ -43,5 +43,18 @@ func (h *Handler) MarkAttendance(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input: " + err.Error()})
 	}
-	h.store.MarkAttendance(userId, req)
+	if err := h.store.MarkAttendance(userId, req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Attendance recorded successfully"})
+}
+
+func (h *Handler) GetAttendanceSummary(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(int)
+	attendances, err := h.store.GetAttendaceSummary(userId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(attendances)
 }
