@@ -8,12 +8,12 @@ import (
 
 type AttendanceStore interface {
 	MarkAttendance(int, *AttendanceRequest) error
-	GetAttendaceSummary(userId int) ([]Attendance, error)
+	GetAttendanceSummary(userId int) ([]Attendance, error)
 }
 type AttendanceRequest struct {
 	SubjectName string    `json:"subject_name" validate:"required"`
 	Status      bool      `json:"status" validate:"required"`
-	Date        time.Time `json:"date" validate:"required"`
+	Date        time.Time `json:"date"`
 }
 
 type SubjectSchedule struct {
@@ -32,8 +32,8 @@ type Attendance struct {
 	Date      time.Time `json:"date"  gorm:"index;uniqueIndex:user_subject_date" validate:"required"`
 
 	// Relations
-	User    User    `gorm:"foreignKey:UserId"`
-	Subject Subject `gorm:"foreignKey:SubjectId"`
+	User    User    `json:"user" gorm:"foreignKey:UserId"`
+	Subject Subject `json:"subject" gorm:"foreignKey:SubjectId"`
 }
 
 type Subject struct {

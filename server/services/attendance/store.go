@@ -1,6 +1,7 @@
 package attendance
 
 import (
+	"fmt"
 	"hexcore/config"
 	"hexcore/types"
 
@@ -23,7 +24,7 @@ func (s *Store) MarkAttendance(userId int, req *types.AttendanceRequest) error {
 	// Find the Subject ID for this user
 	subject := new(types.Subject)
 	if err := s.db.Where("user_id = ? AND name = ?", userId, req.SubjectName).First(subject).Error; err != nil {
-		return err
+		return fmt.Errorf("this is the error? %v", err)
 	}
 
 	// Insert Attendance
@@ -48,9 +49,13 @@ func (s *Store) MarkAttendance(userId int, req *types.AttendanceRequest) error {
 	return nil
 }
 
-func (s *Store) GetAttendaceSummary(userId int) ([]types.Attendance, error) {
+func (s *Store) GetAttendanceSummary(userId int) ([]types.Attendance, error) {
 	var attendances []types.Attendance
-	if err := s.db.Where("user_id = ?", userId).Find(&attendances).Error; err != nil {
+	if err := s.db.
+		Preload("User").
+		Preload("Subject").
+		Where("user_id = ?", userId).
+		Find(&attendances).Error; err != nil {
 		return nil, err
 	}
 	return attendances, nil
