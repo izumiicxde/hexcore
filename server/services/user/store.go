@@ -4,6 +4,7 @@ import (
 	"errors"
 	"hexcore/config"
 	"hexcore/types"
+	"hexcore/utils"
 
 	"gorm.io/gorm"
 )
@@ -18,34 +19,51 @@ func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
-// CreateUser inserts a new user into the database with validation
 func (s *Store) CreateUser(user *types.User) error {
-	// Validate user struct before inserting
 	if err := config.Validator.Struct(user); err != nil {
 		return err
 	}
 
-	if err := s.db.Create(user).Error; err != nil {
+	tx := s.db.Begin()
+
+	if err := tx.Create(user).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	var schedules []types.SubjectSchedule
-	if err := s.db.Find(&schedules).Error; err != nil {
+	if err := tx.Find(&schedules).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	// Assign subjects to the new user
-	var subjects []types.Subject
-	for _, schedule := range schedules {
-		subjects = append(subjects, types.Subject{
-			UserId:     user.ID,
-			Name:       schedule.Name,
-			MaxClasses: 0, // Set to default or calculated based on schedules
-		})
+	// Create a map of subject name -> MaxClasses from utils.Subjects
+	subjectMaxClasses := make(map[string]int)
+	for _, sub := range utils.Subjects {
+		subjectMaxClasses[sub.Name] = sub.MaxClasses
 	}
 
-	// Insert subjects
-	return s.db.Create(&subjects).Error
+	// Deduplicate and assign max classes
+	subjectMap := make(map[string]bool)
+	var subjects []types.Subject
+
+	for _, schedule := range schedules {
+		if !subjectMap[schedule.Name] {
+			subjectMap[schedule.Name] = true
+			subjects = append(subjects, types.Subject{
+				UserId:     user.ID,
+				Name:       schedule.Name,
+				MaxClasses: subjectMaxClasses[schedule.Name], // Get calculated MaxClasses
+			})
+		}
+	}
+
+	if err := tx.Create(&subjects).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 // GetUserByUsername retrieves a user by username

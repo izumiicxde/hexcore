@@ -33,7 +33,7 @@ func main() {
 }
 
 func migrate(db *gorm.DB) {
-	db.Exec("CREATE UNIQUE INDEX user_subject_date ON attendances (user_id, subject_id, date)")
+	// db.Exec("CREATE UNIQUE INDEX user_subject_date ON attendances (user_id, subject_id, date)")
 	if err := db.AutoMigrate(
 		&types.User{},
 		&types.Subject{},

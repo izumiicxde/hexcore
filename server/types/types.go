@@ -8,7 +8,7 @@ import (
 
 type AttendanceStore interface {
 	MarkAttendance(int, *AttendanceRequest) error
-	GetAttendaceSummary(userId int) (*[]Attendance, error)
+	GetAttendaceSummary(userId int) ([]Attendance, error)
 }
 type AttendanceRequest struct {
 	SubjectName string    `json:"subject_name" validate:"required"`
