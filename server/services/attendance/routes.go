@@ -36,6 +36,18 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 
 	router.Post("/attendance", h.MarkAttendance)
 	router.Get("/attendance", h.GetAttendanceSummary)
+	router.Get("/attendance/prediction", h.GetAttendancePrediction)
+}
+
+func (h *Handler) GetAttendancePrediction(c *fiber.Ctx) error {
+	userId := c.Locals("userId").(int)
+
+	predictions, err := h.store.GetAttendancePrediction(userId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(predictions)
 }
 
 func (h *Handler) MarkAttendance(c *fiber.Ctx) error {

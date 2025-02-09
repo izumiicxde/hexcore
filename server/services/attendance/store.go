@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hexcore/config"
 	"hexcore/types"
+	"math"
 
 	"gorm.io/gorm"
 )
@@ -14,6 +15,33 @@ type Store struct {
 
 func NewAttendanceStore(db *gorm.DB) *Store {
 	return &Store{db}
+}
+
+func (s *Store) GetAttendancePrediction(userId int) ([]types.AttendancePrediction, error) {
+	var subjects []types.Subject
+	if err := s.db.Where("user_id = ?", userId).Find(&subjects).Error; err != nil {
+		return nil, err
+	}
+
+	var predictions []types.AttendancePrediction
+	for _, subject := range subjects {
+		remainingClasses := subject.MaxClasses - subject.TotalTaken
+		requiredAttended := int(math.Ceil(0.80 * float64(subject.MaxClasses)))
+		canSkip := subject.MaxClasses - requiredAttended - subject.AttendedClasses
+
+		if canSkip < 0 {
+			canSkip = 0 // User already below 75%
+		}
+
+		predictions = append(predictions, types.AttendancePrediction{
+			SubjectName:      subject.Name,
+			CanSkip:          canSkip,
+			RemainingClasses: remainingClasses,
+			ClassesTaken:     subject.TotalTaken,
+			TotalClasses:     subject.MaxClasses,
+		})
+	}
+	return predictions, nil
 }
 
 func (s *Store) MarkAttendance(userId int, req *types.AttendanceRequest) error {

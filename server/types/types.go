@@ -9,7 +9,17 @@ import (
 type AttendanceStore interface {
 	MarkAttendance(int, *AttendanceRequest) error
 	GetAttendanceSummary(userId int) ([]Attendance, error)
+	GetAttendancePrediction(userId int) ([]AttendancePrediction, error)
 }
+
+type AttendancePrediction struct {
+	SubjectName      string `json:"subject_name"`
+	CanSkip          int    `json:"can_skip"` // Number of classes they can miss
+	RemainingClasses int    `json:"remaining_classes"`
+	ClassesTaken     int    `json:"classes_taken"`
+	TotalClasses     int    `json:"total_classes"`
+}
+
 type AttendanceRequest struct {
 	SubjectName string    `json:"subject_name" validate:"required"`
 	Status      bool      `json:"status" validate:"required"`
