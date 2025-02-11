@@ -1,3 +1,4 @@
+"use client";
 import { ThemeModeToggle } from "@/components/mode-toggler";
 
 const page = () => {
