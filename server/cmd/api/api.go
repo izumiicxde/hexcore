@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,12 @@ func NewAPIServer(addr string, db *gorm.DB) *APIServer {
 func (s *APIServer) Run() error {
 	app := fiber.New()
 	api := app.Group("/api/v1")
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:3000", // Frontend URL
+		AllowMethods:     "GET, POST, PUT, DELETE",
+		AllowHeaders:     "Content-Type, Authorization",
+		AllowCredentials: true,
+	}))
 
 	userstore := user.NewStore(s.db)
 	userhandler := user.NewHandler(userstore)

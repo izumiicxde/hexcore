@@ -56,18 +56,19 @@ type Subject struct {
 }
 
 type UserStore interface {
-	CreateUser(user *User) error
-	GetUserByUsername(username string) (*User, error)
+	CreateUser(*User) error
+	GetUserById(int) (*User, error)
+	GetUserByEmail(string) (*User, error)
+	GetUserByUsername(string) (*User, error)
 	GetAllUsers() ([]User, error)
-	GetUserById(id int) (*User, error)
-	UpdateUser(user *User) error
-	DeleteUser(id int) error
+	UpdateUser(*User) error
+	DeleteUser(int) error
 }
 
 type User struct {
 	gorm.Model
 	Email    string `json:"email" gorm:"unique" validate:"required,email"`
-	FullName string `json:"full_name" validate:"required"`
+	FullName string `json:"fullname" validate:"required"`
 	Password string `json:"password" validate:"required"`
 	Role     string `json:"role" validate:"required"`
 	Username string `json:"username" gorm:"unique" validate:"required"`

@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { fields } from "./fields";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
-import { userStore } from "@/store/store";
 
 const page = () => {
   const router = useRouter();

@@ -66,6 +66,29 @@ func (s *Store) CreateUser(user *types.User) error {
 	return tx.Commit().Error
 }
 
+// GetUserById retrieves a user by ID
+func (s *Store) GetUserById(id int) (*types.User, error) {
+	var user types.User
+	if err := s.db.First(&user, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (s *Store) GetUserByEmail(email string) (*types.User, error) {
+	user := new(types.User)
+	if err := s.db.Where("email = ?", email).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
 // GetUserByUsername retrieves a user by username
 func (s *Store) GetUserByUsername(username string) (*types.User, error) {
 	var user types.User
@@ -85,18 +108,6 @@ func (s *Store) GetAllUsers() ([]types.User, error) {
 		return nil, err
 	}
 	return users, nil
-}
-
-// GetUserById retrieves a user by ID
-func (s *Store) GetUserById(id int) (*types.User, error) {
-	var user types.User
-	if err := s.db.First(&user, id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
-		}
-		return nil, err
-	}
-	return &user, nil
 }
 
 // UpdateUser updates a user's details with validation

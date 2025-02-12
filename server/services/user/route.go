@@ -1,9 +1,11 @@
 package user
 
 import (
+	"fmt"
 	"hexcore/services/auth"
 	"hexcore/types"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,16 +51,23 @@ func (h *Handler) login(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		Username string `json:"username" validate:"required"`
-		Password string `json:"password" validate:"required"`
+		Identifier string `json:"identifier" validate:""`
+		Password   string `json:"password" validate:"required"`
 	}
 
-	if err := c.BodyParser(&req); err != nil {
+	err := c.BodyParser(&req)
+	if err != nil || (req.Identifier == "") {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid input"})
 	}
 
 	// Fetch user by username
-	user, err := h.store.GetUserByUsername(req.Username)
+	user := new(types.User)
+	if strings.Contains(req.Identifier, "@") {
+		user, err = h.store.GetUserByEmail(req.Identifier)
+	} else {
+		user, err = h.store.GetUserByUsername(req.Identifier)
+	}
+
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
 	}
@@ -80,9 +89,10 @@ func (h *Handler) login(c *fiber.Ctx) error {
 		Value:    token,
 		Expires:  time.Now().Add(24 * time.Hour), // Expires in 24 hours
 		HTTPOnly: true,
-		Secure:   true, // Use true if deploying on HTTPS
+		Secure:   false, // Use true if deploying on HTTPS
 		SameSite: "Strict",
 	})
+	fmt.Println(token)
 
 	return c.JSON(fiber.Map{
 		"message": "success",
@@ -107,6 +117,23 @@ func (h *Handler) register(c *fiber.Ctx) error {
 	if err := h.store.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	// Generate JWT token
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "could not generate token"})
+	}
+
+	// Set token in an HTTP-only cookie (prevents JavaScript access)
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    token,
+		Expires:  time.Now().Add(24 * time.Hour), // Expires in 24 hours
+		HTTPOnly: true,
+		Secure:   true, // Use true if deploying on HTTPS
+		SameSite: "Strict",
+	})
+
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 

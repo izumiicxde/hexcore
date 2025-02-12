@@ -2,7 +2,7 @@ package auth
 
 import (
 	"errors"
-	"os"
+	"hexcore/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -33,13 +33,12 @@ func GenerateToken(userID uint) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("JWT_SECRET")
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(config.Envs.JWT_SECRET))
 }
 
 func ValidateToken(tokenString string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return []byte(config.Envs.JWT_SECRET), nil
 	})
 
 	if err != nil || !token.Valid {
