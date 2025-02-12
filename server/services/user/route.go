@@ -1,7 +1,6 @@
 package user
 
 import (
-	"fmt"
 	"hexcore/services/auth"
 	"hexcore/types"
 	"strconv"
@@ -89,10 +88,9 @@ func (h *Handler) login(c *fiber.Ctx) error {
 		Value:    token,
 		Expires:  time.Now().Add(24 * time.Hour), // Expires in 24 hours
 		HTTPOnly: true,
-		Secure:   false, // Use true if deploying on HTTPS
-		SameSite: "Strict",
+		Secure:   true, // Use true if deploying on HTTPS
+		// SameSite: "Strict",
 	})
-	fmt.Println(token)
 
 	return c.JSON(fiber.Map{
 		"message": "success",

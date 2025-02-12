@@ -36,10 +36,9 @@ const page = () => {
         `${process.env.NEXT_PUBLIC_API_URL}/users/register`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
+          credentials: "include",
         }
       );
       const data = await response.json();
@@ -59,7 +58,6 @@ const page = () => {
         title: "Error signing up",
         description: "Something went wrong",
       });
-      console.log(err);
     }
   };
 
