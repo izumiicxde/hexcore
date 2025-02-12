@@ -116,7 +116,7 @@ export default function LoginForm() {
                 )}
               />
             ))}
-            <Button type="submit">Sign Up</Button>
+            <Button type="submit">Login</Button>
           </form>
         </Form>
         <CardFooter className="p-0 pt-3 text-sm">
