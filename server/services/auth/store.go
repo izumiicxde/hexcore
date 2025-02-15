@@ -63,3 +63,30 @@ func (s *Store) GetUserByIdentifier(identifier string) (*types.User, error) {
 
 	return user, nil
 }
+
+func (s *Store) GetUserById(id uint) (*types.User, error) {
+	user := new(types.User)
+
+	if err := s.db.Where("id = ?", id).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
+func (s *Store) UpdateUser(user *types.User) error {
+	tx := s.db.Begin()
+
+	currentUser := new(types.User)
+	if err := tx.Where("id = ?", user.ID).First(currentUser).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("user not found %v", err)
+	}
+	if err := tx.Model(currentUser).Updates(user).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error updating user %v", err)
+	}
+	return tx.Commit().Error
+}

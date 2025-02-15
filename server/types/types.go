@@ -9,8 +9,8 @@ import (
 type UserStore interface {
 	CreateUser(*User) error
 	GetUserByIdentifier(string) (*User, error)
-	// GetUser(uint) (*User, error)
-	// UpdateUser(*User) error
+	GetUserById(uint) (*User, error)
+	UpdateUser(*User) error
 	// DeleteUser(uint) error
 }
 

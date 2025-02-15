@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	DB_URL string `env:"DB_URL"`
-	PORT   string `env:"PORT"`
-
-	JWT_SECRET string `env:"JWT_SECRET"`
+	DB_URL         string `env:"DB_URL"`
+	PORT           string `env:"PORT"`
+	API_ENDPOINT   string `env:"API_ENDPOINT"`
+	JWT_SECRET     string `env:"JWT_SECRET"`
+	RESEND_API_KEY string `env:"RESEND_API_KEY"`
 }
 
 var Envs Config

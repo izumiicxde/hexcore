@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"hexcore/mail"
 	"hexcore/types"
 	"hexcore/utils"
 	"net/http"
@@ -22,6 +23,7 @@ func NewHandler(s types.UserStore) *Handler {
 func (h *Handler) RegisterRoutes(router fiber.Router) {
 	router.Post("/signup", h.Signup)
 	router.Post("/login", h.Login)
+	router.Get("/verify/:code", h.Verify)
 }
 
 func (h *Handler) Signup(c *fiber.Ctx) error {
@@ -48,7 +50,10 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	if err := h.store.CreateUser(user); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error creating user %v", err))
 	}
-
+	id := mail.SendMail(user.Email, user.Username, user.VerificationToken)
+	if id == "" {
+		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending verification email, please try again later"))
+	}
 	// create a JWT token for the user
 	token := utils.GenerateJWT(user.ID, user.Role)
 	c.Cookie(&fiber.Cookie{
@@ -60,7 +65,7 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	})
 
 	user.Password = "" // just to not send the password in the response
-	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "user created successfully", "user": user})
+	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "verification email sent successfully", "user": user})
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
@@ -100,4 +105,34 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 			"role":     user.Role,
 		},
 	})
+}
+
+func (h *Handler) Verify(c *fiber.Ctx) error {
+	code := c.Params("code")
+	if code == "" {
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request"))
+	}
+
+	// get the jwt token from cookies
+	_, claims, err := utils.ParseJWT(c.Cookies("token"))
+	if err != nil {
+		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+	}
+
+	userId := claims["userId"].(uint)
+	user, err := h.store.GetUserById(userId)
+	if err != nil {
+		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
+	}
+	if user.IsVerified || user.VerificationToken != code || user.TokenExpiry.After(time.Now()) {
+		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid verification code"))
+	}
+	user.IsVerified = true
+	user.TokenExpiry = time.Now()
+	user.VerificationToken = ""
+
+	if err := h.store.UpdateUser(user); err != nil {
+		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error updating user %v", err))
+	}
+	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "email verified successfully", "redirect": true})
 }
