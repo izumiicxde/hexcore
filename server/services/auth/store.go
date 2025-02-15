@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"hexcore/config"
 	"hexcore/types"
@@ -48,4 +49,17 @@ func (s *Store) CreateUser(user *types.User) error {
 
 	// Commit transaction if everything is successful
 	return tx.Commit().Error
+}
+
+func (s *Store) GetUserByIdentifier(identifier string) (*types.User, error) {
+	user := new(types.User)
+
+	if err := s.db.Where("email = ? OR username = ?", identifier, identifier).First(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+
+	return user, nil
 }

@@ -8,9 +8,8 @@ import (
 
 type UserStore interface {
 	CreateUser(*User) error
+	GetUserByIdentifier(string) (*User, error)
 	// GetUser(uint) (*User, error)
-	// GetUserByUsername(string) (*User, error)
-	// GetUserByEmail(string) (*User, error)
 	// UpdateUser(*User) error
 	// DeleteUser(uint) error
 }
@@ -18,12 +17,15 @@ type UserStore interface {
 // table structure
 type User struct {
 	gorm.Model
-	Username string `gorm:"unique" json:"username" validate:"required,min=4,max=24"`
-	Email    string `gorm:"unique" json:"email" validate:"required,email"`
-	Fullname string `json:"fullname" validate:"required,min=4,max=24"`
-	Password string `json:"password" validate:"required"` // Hashed password
-	Role     string `json:"role"`                         // student/teacher/admin
-	Subjects []Subject
+	Username          string `gorm:"unique" json:"username" validate:"required,min=4,max=24"`
+	Email             string `gorm:"unique" json:"email" validate:"required,email"`
+	Fullname          string `json:"fullname" validate:"required,min=4,max=24"`
+	Password          string `json:"password" validate:"required"` // Hashed password
+	Role              string `json:"role"`                         // student/teacher/admin
+	IsVerified        bool   `json:"isVerified" gorm:"default:false"`
+	VerificationToken string `json:"verificationToken" gorm:"default:''"`
+	TokenExpiry       time.Time
+	Subjects          []Subject
 }
 
 type Subject struct {
