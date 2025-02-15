@@ -7,7 +7,7 @@ import (
 )
 
 type UserStore interface {
-	// CreateUser(*User) error
+	CreateUser(*User) error
 	// GetUser(uint) (*User, error)
 	// GetUserByUsername(string) (*User, error)
 	// GetUserByEmail(string) (*User, error)
@@ -18,12 +18,14 @@ type UserStore interface {
 // table structure
 type User struct {
 	gorm.Model
-	Username string `gorm:"uniqueIndex" json:"username"`
-	Email    string `gorm:"uniqueIndex" json:"email"`
-	Password string `json:"password"` // Hashed password
-	Role     string `json:"role"`     // student/teacher/admin
+	Username string `gorm:"unique" json:"username" validate:"required,min=4,max=24"`
+	Email    string `gorm:"unique" json:"email" validate:"required,email"`
+	Fullname string `json:"fullname" validate:"required,min=4,max=24"`
+	Password string `json:"password" validate:"required"` // Hashed password
+	Role     string `json:"role"`                         // student/teacher/admin
 	Subjects []Subject
 }
+
 type Subject struct {
 	gorm.Model
 	UserID          uint   `json:"user_id" gorm:"index;constraint:OnDelete:CASCADE;"`
