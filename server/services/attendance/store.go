@@ -17,20 +17,14 @@ func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
-func (s *Store) GetTodaysClasses(userID uint) ([]types.Subject, error) {
-	var subjects []types.Subject
+func (s *Store) GetTodaysClasses(userID uint) ([]types.ClassSchedule, error) {
 	today := time.Now().Weekday().String()
 
-	err := s.db.
-		Joins("JOIN schedules ON schedules.subject_name = subjects.name").
-		Where("schedules.day = ?", today).
-		Find(&subjects).Error
-
+	classes, err := s.GetClassesByDay(today)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch today's classes: %v", err)
+		return nil, fmt.Errorf("failed to fetch classes for %s: %v", today, err)
 	}
-
-	return subjects, nil
+	return classes, nil
 }
 
 // GetClassesByDay fetches the subjects for a given day provided in query params.
