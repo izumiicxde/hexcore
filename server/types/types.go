@@ -11,7 +11,7 @@ type UserStore interface {
 	GetUserByIdentifier(string) (*User, error)
 	GetUserById(uint) (*User, error)
 	UpdateUser(*User) error
-	// DeleteUser(uint) error
+	DeleteUser(uint) error
 }
 
 // table structure
@@ -35,15 +35,15 @@ type Subject struct {
 	MaxClasses      int    `json:"max_classes"`
 	TotalTaken      int    `json:"total_taken"`
 	AttendedClasses int    `json:"attended_classes"`
-	Schedules       []Schedule
+	// Schedules       []Schedule
 }
 
 type Schedule struct {
 	gorm.Model
-	SubjectID uint         `json:"subject_id" gorm:"index;constraint:OnDelete:CASCADE;"`
-	Day       time.Weekday `json:"day"`        // 0 = Sunday, 1 = Monday, ...
-	StartTime string       `json:"start_time"` // "10:00 AM"
-	EndTime   string       `json:"end_time"`   // "11:00 AM"
+	SubjectName string `json:"subjectName" gorm:"index"`
+	Day         string `json:"day"`       // 0 = Sunday, 1 = Monday, etc.
+	StartTime   string `json:"startTime"` // "10:00 AM"
+	EndTime     string `json:"endTime"`   // "11:00 AM"
 }
 
 type Attendance struct {

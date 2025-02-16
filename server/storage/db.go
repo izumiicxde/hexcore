@@ -23,3 +23,17 @@ func AutoMigrate(db *gorm.DB) {
 		log.Fatal(err)
 	}
 }
+
+func CreateSchedules(db *gorm.DB) error {
+	// Check if schedules already exist to avoid duplicate entries
+	var count int64
+	if err := db.Model(&types.Schedule{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil // Table already has data, no need to insert again
+	}
+
+	// Insert schedules into the database
+	return db.Create(&config.Schedules).Error
+}
