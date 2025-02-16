@@ -7,7 +7,7 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
-func SendMail(to, username, code string) string {
+func SendMail(to, username, code string) error {
 	client := resend.NewClient(config.Envs.RESEND_API_KEY)
 
 	params := &resend.SendEmailRequest{
@@ -17,10 +17,10 @@ func SendMail(to, username, code string) string {
 		Subject: "Verification email from Zen-Axcd",
 	}
 
-	sent, err := client.Emails.Send(params)
+	_, err := client.Emails.Send(params)
 	if err != nil {
 		fmt.Println(err.Error())
-		return ""
+		return err
 	}
-	return sent.Id
+	return nil
 }

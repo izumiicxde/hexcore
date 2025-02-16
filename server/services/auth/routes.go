@@ -23,7 +23,9 @@ func NewHandler(s types.UserStore) *Handler {
 func (h *Handler) RegisterRoutes(router fiber.Router) {
 	router.Post("/signup", h.Signup)
 	router.Post("/login", h.Login)
+
 	router.Get("/verify/:code", h.Verify)
+	router.Get("/verify", h.GetVerificationCode)
 }
 
 func (h *Handler) Signup(c *fiber.Ctx) error {
@@ -50,10 +52,11 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	if err := h.store.CreateUser(user); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error creating user %v", err))
 	}
-	id := mail.SendMail(user.Email, user.Username, user.VerificationToken)
-	if id == "" {
+
+	if err = mail.SendMail(user.Email, user.Username, user.VerificationToken); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending verification email, please try again later"))
 	}
+
 	// create a JWT token for the user
 	token := utils.GenerateJWT(user.ID, user.Role)
 	c.Cookie(&fiber.Cookie{
@@ -135,4 +138,34 @@ func (h *Handler) Verify(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error updating user %v", err))
 	}
 	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "email verified successfully", "redirect": true})
+}
+
+func (h *Handler) GetVerificationCode(c *fiber.Ctx) error {
+	// get the jwt token from cookies
+	_, claims, err := utils.ParseJWT(c.Cookies("token"))
+	if err != nil {
+		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+	}
+
+	userId := claims["userId"].(uint)
+	user, err := h.store.GetUserById(userId)
+	if err != nil {
+		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
+	}
+	if user.IsVerified || time.Now().Before(user.TokenExpiry) {
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("please wait sometime, before requesting the code."))
+	}
+
+	code := utils.GenerateVerificationCode()
+	user.VerificationToken = code
+	user.TokenExpiry = time.Now().Add(time.Minute * 5)
+	user.IsVerified = false
+
+	if err := mail.SendMail(user.Email, user.Username, code); err != nil {
+		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("there was an error sending the email %v", err))
+	}
+	if err := h.store.UpdateUser(user); err != nil {
+		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("internal server error"))
+	}
+	return utils.WriteJSON(c, http.StatusOK, map[string]string{"message": "verification mail send successfully"})
 }
