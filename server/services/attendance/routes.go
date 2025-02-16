@@ -54,7 +54,7 @@ func (h *Handler) GetTodaysClasses(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
 	}
-	userId := uint(claims["userId"].(float64))
+	userId := claims["userId"].(uint)
 
 	classes, err := h.store.GetTodaysClasses(userId)
 	fmt.Println("classes", classes, "userId", userId)
@@ -75,13 +75,9 @@ func (h *Handler) MarkAttendance(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusBadRequest, err)
 	}
 
-	_, claims, err := utils.ParseJWT(c.Cookies("token"))
-	if err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
-	}
-	userId := uint(claims["userId"].(float64))
+	userId := c.Locals("userId").(uint)
 
-	err = h.store.MarkAttendance(userId, req.SubjectID, req.Status)
+	err := h.store.MarkAttendance(userId, req.SubjectID, req.Status)
 	if err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, err)
 	}
@@ -90,11 +86,8 @@ func (h *Handler) MarkAttendance(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetAttendanceSummary(c *fiber.Ctx) error {
-	_, claims, err := utils.ParseJWT(c.Cookies("token"))
-	if err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
-	}
-	userId := uint(claims["userId"].(float64))
+
+	userId := c.Locals("userId").(uint)
 
 	summary, err := h.store.GetAttendanceSummary(userId)
 	if err != nil {
@@ -105,11 +98,7 @@ func (h *Handler) GetAttendanceSummary(c *fiber.Ctx) error {
 }
 
 func (h *Handler) CalculateSkippableClasses(c *fiber.Ctx) error {
-	_, claims, err := utils.ParseJWT(c.Cookies("token"))
-	if err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
-	}
-	userId := uint(claims["userId"].(float64))
+	userId := c.Locals("userId").(uint)
 
 	skippable, err := h.store.CalculateSkippableClasses(userId)
 	if err != nil {
@@ -125,12 +114,7 @@ func (h *Handler) IsAttendanceMarked(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid subject ID"))
 	}
 
-	_, claims, err := utils.ParseJWT(c.Cookies("token"))
-	if err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
-	}
-	userId := uint(claims["userId"].(float64))
-
+	userId := c.Locals("userId").(uint)
 	isMarked, err := h.store.IsAttendanceMarked(userId, uint(subjectID))
 	if err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, err)

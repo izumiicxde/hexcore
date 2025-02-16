@@ -27,7 +27,7 @@ func AuthMiddleware() fiber.Handler {
 		}
 
 		// Attach user ID to context
-		c.Locals("userID", uint(userID))
+		c.Locals("userId", uint(userID))
 
 		// Proceed to next middleware/handler
 		return c.Next()

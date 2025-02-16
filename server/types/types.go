@@ -10,7 +10,7 @@ type AttendanceStore interface {
 	GetTodaysClasses(userID uint) ([]ClassSchedule, error)
 	GetClassesByDay(day string) ([]ClassSchedule, error)
 	MarkAttendance(userID uint, subjectID uint, status bool) error
-	GetAttendanceSummary(userID uint) (map[string]float64, error)
+	GetAttendanceSummary(userID uint) (map[string]interface{}, error)
 	CalculateSkippableClasses(userID uint) (map[string]int, error)
 	IsAttendanceMarked(userID uint, subjectID uint) (bool, error)
 	ResetAttendance(userID uint) error

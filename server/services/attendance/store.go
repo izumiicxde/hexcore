@@ -75,33 +75,64 @@ func (s *Store) MarkAttendance(userID uint, subjectID uint, status bool) error {
 		return fmt.Errorf("failed to mark attendance: %v", err)
 	}
 
-	// Update attended class count in the subject
+	// Update both total_taken and attended_classes
+	updateQuery := s.db.Model(&types.Subject{}).Where("id = ?", subjectID).
+		Update("total_taken", gorm.Expr("total_taken + 1"))
+
 	if status {
-		if err := s.db.Model(&types.Subject{}).
-			Where("id = ?", subjectID).
-			Update("attended_classes", gorm.Expr("attended_classes + 1")).Error; err != nil {
-			return fmt.Errorf("failed to update attended class count: %v", err)
-		}
+		updateQuery = updateQuery.Update("attended_classes", gorm.Expr("attended_classes + 1"))
+	}
+
+	if err := updateQuery.Error; err != nil {
+		return fmt.Errorf("failed to update subject attendance: %v", err)
 	}
 
 	return nil
 }
 
-func (s *Store) GetAttendanceSummary(userID uint) (map[string]float64, error) {
+func (s *Store) GetAttendanceSummary(userID uint) (map[string]interface{}, error) {
 	var subjects []types.Subject
 	err := s.db.Where("user_id = ?", userID).Find(&subjects).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch subjects: %v", err)
 	}
 
-	summary := make(map[string]float64)
+	totalClasses := 0
+	totalAttended := 0
+	summary := make(map[string]interface{})
+
+	subjectDetails := make(map[string]map[string]float64)
+
 	for _, subject := range subjects {
 		if subject.MaxClasses == 0 {
 			continue
 		}
-		percentage := (float64(subject.AttendedClasses) / float64(subject.MaxClasses)) * 100
-		summary[subject.Name] = percentage
+
+		attended := float64(subject.AttendedClasses)
+		maxClasses := float64(subject.MaxClasses)
+		percentage := (attended / maxClasses) * 100
+
+		subjectDetails[subject.Name] = map[string]float64{
+			"max_classes":      maxClasses,
+			"attended_classes": attended,
+			"remaining":        maxClasses - attended,
+			"percentage":       percentage,
+		}
+
+		totalClasses += subject.MaxClasses
+		totalAttended += subject.AttendedClasses
 	}
+
+	overallPercentage := 0.0
+	if totalClasses > 0 {
+		overallPercentage = (float64(totalAttended) / float64(totalClasses)) * 100
+	}
+
+	summary["subjects"] = subjectDetails
+	summary["total_classes"] = totalClasses
+	summary["total_attended"] = totalAttended
+	summary["total_missed"] = totalClasses - totalAttended
+	summary["overall_percentage"] = overallPercentage
 
 	return summary, nil
 }
