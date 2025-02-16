@@ -1,6 +1,7 @@
 package api
 
 import (
+	"hexcore/services/attendance"
 	"hexcore/services/auth"
 	"log"
 
@@ -26,6 +27,10 @@ func (s *APIServer) Run() {
 	userStore := auth.NewStore(s.db)
 	authHandler := auth.NewHandler(userStore)
 	authHandler.RegisterRoutes(subrouter)
+
+	attendanceStore := attendance.NewStore(s.db)
+	attendanceHandler := attendance.NewHandler(attendanceStore)
+	attendanceHandler.RegisterRoutes(subrouter)
 
 	log.Fatal(app.Listen(":" + s.addr))
 }

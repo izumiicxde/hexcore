@@ -21,21 +21,19 @@ func NewHandler(s types.UserStore) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(router fiber.Router) {
-	router.Post("/signup", h.Signup)
-	router.Post("/login", h.Login)
-
-	router.Get("/verify", h.Verify)
-	router.Get("/verificationCode", h.GetVerificationCode)
+	router.Post("/signup", h.Signup)                       // User Signup
+	router.Post("/login", h.Login)                         // User Login
+	router.Get("/verify", h.Verify)                        // Email Verification
+	router.Get("/verificationCode", h.GetVerificationCode) // Request New Verification Code
 }
 
 func (h *Handler) Signup(c *fiber.Ctx) error {
-	// parse the request body
 	user := new(types.User)
 	if err := c.BodyParser(user); err != nil {
 		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
 	}
 
-	// hash the password
+	// Hash password before storing
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -43,21 +41,22 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	user.Password = string(hash)
 	user.Role = "student"
 
-	//verification
+	// Email Verification Setup
 	user.IsVerified = false
 	user.VerificationToken = utils.GenerateVerificationCode()
-	user.TokenExpiry = time.Now().Add(time.Minute * 5) // 5 minutes expiration time
+	user.TokenExpiry = time.Now().Add(time.Minute * 5)
 
-	// create the user
+	// Store user
 	if err := h.store.CreateUser(user); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error creating user %v", err))
 	}
 
+	// Send verification email
 	if err = mail.SendMail(user.Email, user.Username, user.VerificationToken); err != nil {
-		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending verification email, please try again later"))
+		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending verification email"))
 	}
 
-	// create a JWT token for the user
+	// Generate JWT token for user
 	token := utils.GenerateJWT(user.ID, user.Role)
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
@@ -67,7 +66,7 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 		HTTPOnly: true,
 	})
 
-	user.Password = "" // just to not send the password in the response
+	user.Password = "" // Remove password from response
 	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "verification email sent successfully", "user": user})
 }
 
@@ -90,6 +89,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid credentials"))
 	}
 
+	// Generate JWT token
 	token := utils.GenerateJWT(user.ID, user.Role)
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
@@ -116,7 +116,7 @@ func (h *Handler) Verify(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request"))
 	}
 
-	// get the jwt token from cookies
+	// Get user from token
 	_, claims, err := utils.ParseJWT(c.Cookies("token"))
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
@@ -146,7 +146,7 @@ func (h *Handler) Verify(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetVerificationCode(c *fiber.Ctx) error {
-	// get the jwt token from cookies
+	// Get user from token
 	_, claims, err := utils.ParseJWT(c.Cookies("token"))
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
@@ -158,19 +158,21 @@ func (h *Handler) GetVerificationCode(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
 	}
 	if user.IsVerified || time.Now().Before(user.TokenExpiry) {
-		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("please wait sometime, before requesting the code"))
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("please wait before requesting another code"))
 	}
 
+	// Generate new verification code
 	code := utils.GenerateVerificationCode()
 	user.VerificationToken = code
 	user.TokenExpiry = time.Now().Add(time.Minute * 5)
 	user.IsVerified = false
 
+	// Send email
 	if err := mail.SendMail(user.Email, user.Username, code); err != nil {
-		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("there was an error sending the email %v", err))
+		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending email"))
 	}
 	if err := h.store.UpdateUser(user); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 	}
-	return utils.WriteJSON(c, http.StatusOK, map[string]string{"message": "verification mail send successfully"})
+	return utils.WriteJSON(c, http.StatusOK, map[string]string{"message": "verification mail sent successfully"})
 }
