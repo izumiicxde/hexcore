@@ -24,8 +24,8 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 	router.Post("/signup", h.Signup)
 	router.Post("/login", h.Login)
 
-	router.Get("/verify/:code", h.Verify)
-	router.Get("/verify", h.GetVerificationCode)
+	router.Get("/verify", h.Verify)
+	router.Get("/verificationCode", h.GetVerificationCode)
 }
 
 func (h *Handler) Signup(c *fiber.Ctx) error {
@@ -111,7 +111,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Verify(c *fiber.Ctx) error {
-	code := c.Params("code")
+	code := c.Query("code")
 	if code == "" {
 		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request"))
 	}
@@ -122,17 +122,22 @@ func (h *Handler) Verify(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
 	}
 
-	userId := claims["userId"].(uint)
-	user, err := h.store.GetUserById(userId)
+	userId := claims["userId"].(float64)
+	user, err := h.store.GetUserById(uint(userId))
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
 	}
-	if user.IsVerified || user.VerificationToken != code || user.TokenExpiry.After(time.Now()) {
+	if user.IsVerified {
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("email already verified"))
+	}
+
+	if user.VerificationToken != code || user.TokenExpiry.Before(time.Now()) {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid verification code"))
 	}
+
 	user.IsVerified = true
 	user.TokenExpiry = time.Now()
-	user.VerificationToken = ""
+	user.VerificationToken = "-"
 
 	if err := h.store.UpdateUser(user); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error updating user %v", err))
@@ -147,13 +152,13 @@ func (h *Handler) GetVerificationCode(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
 	}
 
-	userId := claims["userId"].(uint)
-	user, err := h.store.GetUserById(userId)
+	userId := claims["userId"].(float64)
+	user, err := h.store.GetUserById(uint(userId))
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
 	}
 	if user.IsVerified || time.Now().Before(user.TokenExpiry) {
-		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("please wait sometime, before requesting the code."))
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("please wait sometime, before requesting the code"))
 	}
 
 	code := utils.GenerateVerificationCode()
