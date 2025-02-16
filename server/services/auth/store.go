@@ -90,3 +90,33 @@ func (s *Store) UpdateUser(user *types.User) error {
 	}
 	return tx.Commit().Error
 }
+
+func (s *Store) DeleteUser(id uint) error {
+	user := new(types.User)
+	if err := s.db.Unscoped().Where("id = ?", id).First(user).Error; err != nil {
+		return fmt.Errorf("user not found: %v", err)
+	}
+
+	tx := s.db.Begin()
+
+	if user.DeletedAt.Valid {
+		// User already soft deleted — delete permanently
+		if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&types.Subject{}).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		if err := tx.Unscoped().Delete(user).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else {
+		// Soft delete the user
+		if err := tx.Delete(user).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}

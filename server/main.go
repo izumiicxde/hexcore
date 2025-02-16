@@ -11,5 +11,6 @@ func main() {
 	storage.AutoMigrate(db)
 
 	api := api.NewAPIServer(config.Envs.PORT, db)
+
 	api.Run()
 }
