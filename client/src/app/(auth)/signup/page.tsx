@@ -8,7 +8,8 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormInput } from "../_components/form-input"; // Import the reusable component
-import { onSubmit } from "./onsubmit";
+import { toast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 const defaultValues: z.infer<typeof signupSchema> = {
   username: "",
@@ -19,12 +20,44 @@ const defaultValues: z.infer<typeof signupSchema> = {
 };
 
 export default function SignupForm() {
+  const router = useRouter();
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues,
   });
 
   const { control, handleSubmit } = form;
+
+  const onSubmit = async (values: z.infer<typeof signupSchema>) => {
+    const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/signup`;
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: data.message,
+        });
+        return;
+      }
+      toast({
+        title: "Successfully registered",
+      });
+      router.push("/");
+    } catch (error) {
+      toast({
+        title: "error registering the user",
+      });
+    }
+  };
 
   return (
     <Card className="max-w-md w-full mx-auto p-6 ">
