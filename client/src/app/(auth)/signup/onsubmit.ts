@@ -1,10 +1,13 @@
 import { toast } from "@/hooks/use-toast";
 import { signupSchema } from "@/schemas/user";
+import { useRouter } from "next/router";
 import { z } from "zod";
 
 export const onSubmit = async (values: z.infer<typeof signupSchema>) => {
+  const router = useRouter();
+  const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/signup`;
   try {
-    const response = await fetch(`${process.env.API_BASE_URL}/auth/signup`, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -23,8 +26,7 @@ export const onSubmit = async (values: z.infer<typeof signupSchema>) => {
     toast({
       title: "Successfully registered",
     });
-
-    console.log(data);
+    router.push("/");
   } catch (error) {
     toast({
       title: "error registering the user",
