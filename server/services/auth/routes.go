@@ -20,7 +20,8 @@ func NewHandler(s types.UserStore) *Handler {
 	return &Handler{store: s}
 }
 
-func (h *Handler) RegisterRoutes(router fiber.Router) {
+func (h *Handler) RegisterRoutes(r fiber.Router) {
+	router := r.Group("/auth")
 	router.Post("/signup", h.Signup)                       // User Signup
 	router.Post("/login", h.Login)                         // User Login
 	router.Get("/verify", h.Verify)                        // Email Verification

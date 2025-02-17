@@ -4,19 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { signupSchema } from "@/schemas/user";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormInput } from "../_components/form-input"; // Import the reusable component
+import { onSubmit } from "./onsubmit";
 
-// Default form values (avoids re-renders)
 const defaultValues: z.infer<typeof signupSchema> = {
   username: "",
   fullname: "",
@@ -25,49 +18,16 @@ const defaultValues: z.infer<typeof signupSchema> = {
   confirmPassword: "",
 };
 
-// Reusable Form Input Component
-const FormInput = ({
-  name,
-  label,
-  type = "text",
-  control,
-}: {
-  name: keyof typeof defaultValues;
-  label: string;
-  type?: string;
-  control: any;
-}) => (
-  <FormField
-    control={control}
-    name={name}
-    render={({ field }) => (
-      <FormItem>
-        <FormLabel>{label}</FormLabel>
-        <FormControl>
-          <Input
-            type={type}
-            placeholder={`Enter your ${label.toLowerCase()}`}
-            {...field}
-          />
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-    )}
-  />
-);
-
 export default function SignupForm() {
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues,
   });
+
   const { control, handleSubmit } = form;
 
-  const onSubmit = (values: z.infer<typeof signupSchema>) =>
-    console.log("Signup Data:", values);
-
   return (
-    <Card className="max-w-md w-full mx-auto p-6 border-red-500 border-4">
+    <Card className="max-w-md w-full mx-auto p-6 ">
       <CardHeader>
         <CardTitle className="text-center">Sign Up</CardTitle>
       </CardHeader>
