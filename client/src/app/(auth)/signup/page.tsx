@@ -6,10 +6,17 @@ import { z } from "zod";
 import { signupSchema } from "@/schemas/user";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { FormInput } from "../_components/form-input"; // Import the reusable component
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const defaultValues: z.infer<typeof signupSchema> = {
   username: "",
@@ -62,11 +69,13 @@ export default function SignupForm() {
   return (
     <Card className="max-w-md w-full mx-auto p-6 ">
       <CardHeader>
-        <CardTitle className="text-center">Sign Up</CardTitle>
+        <CardTitle className="text-center text-3xl font-serif">
+          Welcome to Zen0
+        </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="">
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 ">
             <FormInput name="username" label="Username" control={control} />
             <FormInput name="fullname" label="Full Name" control={control} />
             <FormInput
@@ -94,6 +103,14 @@ export default function SignupForm() {
           </form>
         </Form>
       </CardContent>
+      <CardFooter>
+        <p>
+          Already have an account?{" "}
+          <Link href="/login" className="underline">
+            Sign in
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 }

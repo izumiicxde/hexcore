@@ -21,3 +21,9 @@ export const signupSchema = z
   });
 
 export type TSignupFormValues = z.infer<typeof signupSchema>;
+
+export const loginFormSchema = z.object({
+  identifier: z.string(),
+  password: z.string(),
+});
+export type TLoginFormValues = z.infer<typeof loginFormSchema>;
