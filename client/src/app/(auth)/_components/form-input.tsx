@@ -31,6 +31,7 @@ export const FormInput = ({
             type={type}
             placeholder={`Enter your ${label.toLowerCase()}`}
             {...field}
+            required
           />
         </FormControl>
         <FormMessage />

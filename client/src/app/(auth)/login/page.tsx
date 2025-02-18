@@ -17,14 +17,17 @@ import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { loginFormSchema } from "@/schemas/user";
 import Link from "next/link";
+import { useState } from "react";
+import { Loader2Icon } from "lucide-react";
 
 const defaultValues: z.infer<typeof loginFormSchema> = {
   identifier: "",
   password: "",
 };
 
-export default function SignupForm() {
+export default function LoginForm() {
   const router = useRouter();
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
     defaultValues,
@@ -33,8 +36,9 @@ export default function SignupForm() {
   const { control, handleSubmit } = form;
 
   const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
-    const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/signup`;
+    const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/login`;
     try {
+      setIsSubmittingForm(true);
       const response = await fetch(url, {
         method: "POST",
         credentials: "include",
@@ -47,19 +51,22 @@ export default function SignupForm() {
       const data = await response.json();
       if (!response.ok) {
         toast({
-          title: "Error",
+          title: "login error",
           description: data.message,
         });
+        console.log(data);
         return;
       }
       toast({
-        title: "Successfully registered",
+        title: "Successfully logged in",
       });
       router.push("/");
     } catch (error) {
       toast({
-        title: "error registering the user",
+        title: "error logging in, please try again later",
       });
+    } finally {
+      setIsSubmittingForm(false);
     }
   };
 
@@ -67,7 +74,7 @@ export default function SignupForm() {
     <Card className="max-w-md w-full mx-auto p-6 ">
       <CardHeader>
         <CardTitle className="text-center text-3xl font-serif">
-          Welcome Back,
+          Welcome Back
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -84,16 +91,26 @@ export default function SignupForm() {
               type="password"
               control={control}
             />
-            <Button type="submit" className="w-full">
-              Sign Up
+            <Button
+              type="submit"
+              disabled={isSubmittingForm}
+              className="w-full flex justify-center items-center"
+            >
+              {isSubmittingForm ? (
+                <p className="flex justify-center items-center  w-full h-full gap-0.5">
+                  <Loader2Icon className="animate-spin" /> Signing in
+                </p>
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter>
-        <p>
+        <p className="text-xs">
           Don&apos;t have an account?{" "}
-          <Link href="/login" className="underline">
+          <Link href="/signup" className="underline">
             Sign up
           </Link>
         </p>

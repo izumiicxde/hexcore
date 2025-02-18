@@ -17,6 +17,8 @@ import { FormInput } from "../_components/form-input"; // Import the reusable co
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
+import { Loader2Icon } from "lucide-react";
 
 const defaultValues: z.infer<typeof signupSchema> = {
   username: "",
@@ -27,6 +29,7 @@ const defaultValues: z.infer<typeof signupSchema> = {
 };
 
 export default function SignupForm() {
+  const [isSubmitingForm, setIsSubmitingForm] = useState<boolean>(false);
   const router = useRouter();
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -38,6 +41,7 @@ export default function SignupForm() {
   const onSubmit = async (values: z.infer<typeof signupSchema>) => {
     const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/signup`;
     try {
+      setIsSubmitingForm(true);
       const response = await fetch(url, {
         method: "POST",
         credentials: "include",
@@ -63,6 +67,8 @@ export default function SignupForm() {
       toast({
         title: "error registering the user",
       });
+    } finally {
+      setIsSubmitingForm(false);
     }
   };
 
@@ -97,14 +103,21 @@ export default function SignupForm() {
               control={control}
             />
 
-            <Button type="submit" className="w-full">
-              Sign Up
+            <Button type="submit" disabled={isSubmitingForm} className="w-full">
+              {isSubmitingForm ? (
+                <p className="flex justify-center items-center gap-0.5">
+                  <Loader2Icon className="animate-spin " />
+                  Signing up
+                </p>
+              ) : (
+                "Sign up"
+              )}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter>
-        <p>
+        <p className="text-xs">
           Already have an account?{" "}
           <Link href="/login" className="underline">
             Sign in

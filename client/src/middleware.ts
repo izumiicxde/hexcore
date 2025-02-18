@@ -1,33 +1,33 @@
 import { NextResponse, NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
 
 const secret = process.env.DB_JWT_SECRET!;
 
 export async function middleware(req: NextRequest) {
   try {
     const token = req.cookies.get("token");
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-
-    const valid = !!token;
-
+    const isAuthenticated = !!token?.value;
     const { pathname } = req.nextUrl;
-    if (pathname.startsWith("/login") && !valid) {
-      return NextResponse.next();
-    }
+
     if (
-      (pathname.startsWith("/") || pathname.startsWith("/class/")) &&
-      !valid
+      !isAuthenticated &&
+      (pathname === "/" || pathname.startsWith("/class/"))
     ) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    return NextResponse.next(); // Allow the request to proceed
-  } catch (err) {
+
+    if (
+      isAuthenticated &&
+      (pathname.startsWith("/login") || pathname.startsWith("/signup"))
+    ) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    return NextResponse.next();
+  } catch {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
 export const config = {
-  matcher: ["/", "/class/:path*"], // Protected routes
+  matcher: ["/", "/class/:path*", "/login", "/signup"], // Protected routes
 };
