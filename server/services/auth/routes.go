@@ -41,6 +41,7 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "failed to process the password"})
 	}
+
 	user.Password = hash
 	user.Role = "student"
 
@@ -68,7 +69,7 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 		SameSite: "strict",
 		HTTPOnly: true,
 	})
-
+	user.Password = ""
 	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "verification email sent successfully", "user": user})
 }
 
@@ -100,7 +101,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		SameSite: "strict",
 		HTTPOnly: true,
 	})
-
+	user.Password = ""
 	return utils.WriteJSON(c, http.StatusOK, fiber.Map{"message": "login successfull", "user": user})
 }
 
