@@ -39,8 +39,8 @@ type User struct {
 	Username          string    `gorm:"unique" json:"username" validate:"required,min=4,max=24"`
 	Email             string    `gorm:"unique" json:"email" validate:"required,email"`
 	Fullname          string    `json:"fullname" validate:"required,min=4,max=24"`
-	Password          string    `json:"-" validate:"required"` // Hashed password
-	Role              string    `json:"role"`                  // student/teacher/admin
+	Password          string    `json:"password" validate:"required"` // Hashed password
+	Role              string    `json:"role"`                         // student/teacher/admin
 	IsVerified        bool      `json:"isVerified" gorm:"default:false"`
 	VerificationToken string    `json:"-" gorm:"default:''"`
 	TokenExpiry       time.Time `json:"-" swaggertype:"string" format:"date-time"`
