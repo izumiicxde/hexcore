@@ -23,6 +23,10 @@ type UserStore interface {
 	UpdateUser(*User) error
 	DeleteUser(uint) error
 }
+type LoginRequest struct {
+	Identifier string `json:"identifier" validate:"required"`
+	Password   string `json:"password" validate:"required"`
+}
 
 type ClassSchedule struct {
 	Subject

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"hexcore/config"
 	"hexcore/mail"
 	"hexcore/types"
 	"hexcore/utils"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -33,13 +33,15 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	if err := c.BodyParser(user); err != nil {
 		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
 	}
-
-	// Hash password before storing
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
+	if err := config.Validator.Struct(user); err != nil {
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
 	}
-	user.Password = string(hash)
+	// Hash password before storing
+	hash, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "failed to process the password"})
+	}
+	user.Password = hash
 	user.Role = "student"
 
 	// Email Verification Setup
@@ -67,48 +69,39 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 		HTTPOnly: true,
 	})
 
-	user.Password = "" // Remove password from response
 	return utils.WriteJSON(c, http.StatusOK, map[string]any{"message": "verification email sent successfully", "user": user})
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
-	var req struct {
-		Identifier string `json:"identifier"`
-		Password   string `json:"password"`
+	req := new(types.LoginRequest)
+	if err := c.BodyParser(req); err != nil {
+		return utils.WriteError(c, http.StatusBadRequest, err)
 	}
 
-	if err := c.BodyParser(&req); err != nil {
-		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request body: %v", err))
+	if err := config.Validator.Struct(req); err != nil {
+		return utils.WriteError(c, http.StatusBadRequest, err)
 	}
 
 	user, err := h.store.GetUserByIdentifier(req.Identifier)
-	if err != nil || user == nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid credentials"))
+	if err != nil {
+		return utils.WriteError(c, http.StatusBadRequest, err)
 	}
 
+	// validate the password
 	if err := utils.VerifyPassword(user.Password, req.Password); err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid credentials"))
+		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid credentials"))
 	}
-
-	// Generate JWT token
+	// Generate JWT token for user
 	token := utils.GenerateJWT(user.ID, user.Role)
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
 		Value:    token,
 		Secure:   c.Protocol() == "https",
-		SameSite: "Strict",
+		SameSite: "strict",
 		HTTPOnly: true,
 	})
 
-	return utils.WriteJSON(c, http.StatusOK, map[string]any{
-		"message": "login successful",
-		"user": map[string]any{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-			"role":     user.Role,
-		},
-	})
+	return utils.WriteJSON(c, http.StatusOK, fiber.Map{"message": "login successfull", "user": user})
 }
 
 func (h *Handler) Verify(c *fiber.Ctx) error {
