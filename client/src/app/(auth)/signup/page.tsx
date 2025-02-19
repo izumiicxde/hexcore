@@ -19,9 +19,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Loader2Icon } from "lucide-react";
+import { userStore } from "@/store/user";
+import { IAPIResponse } from "@/types/user";
 
 const defaultValues: z.infer<typeof signupSchema> = {
-  username: "",
+  register_no: "",
   fullname: "",
   email: "",
   password: "",
@@ -30,6 +32,8 @@ const defaultValues: z.infer<typeof signupSchema> = {
 
 export default function SignupForm() {
   const [isSubmitingForm, setIsSubmitingForm] = useState<boolean>(false);
+  const { user, setUser } = userStore();
+
   const router = useRouter();
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -51,7 +55,7 @@ export default function SignupForm() {
         body: JSON.stringify(values),
       });
 
-      const data = await response.json();
+      const data: IAPIResponse = await response.json();
       if (!response.ok) {
         toast({
           title: "Error",
@@ -59,9 +63,12 @@ export default function SignupForm() {
         });
         return;
       }
+
       toast({
         title: "Successfully registered",
       });
+
+      if (data.user) setUser(data.user); // set the user state
       router.push("/");
     } catch (error) {
       toast({
@@ -82,7 +89,11 @@ export default function SignupForm() {
       <CardContent className="">
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 ">
-            <FormInput name="username" label="Username" control={control} />
+            <FormInput
+              name="register_no"
+              label="Register Number"
+              control={control}
+            />
             <FormInput name="fullname" label="Full Name" control={control} />
             <FormInput
               name="email"

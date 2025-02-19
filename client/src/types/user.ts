@@ -1,9 +1,10 @@
-interface IAPIResponse {
-  messaage: string;
+export interface IAPIResponse {
+  message: string;
   user?: IUser;
+  redirect?: boolean;
 }
 
-interface IUser {
+export interface IUser {
   ID: number;
   Username: string;
   Email: string;

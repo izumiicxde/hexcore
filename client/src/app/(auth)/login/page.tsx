@@ -54,7 +54,6 @@ export default function LoginForm() {
           title: "login error",
           description: data.message,
         });
-        console.log(data);
         return;
       }
       toast({
@@ -82,7 +81,7 @@ export default function LoginForm() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <FormInput
               name="identifier"
-              label="Email or Username"
+              label="Email or register no."
               control={control}
             />
             <FormInput
