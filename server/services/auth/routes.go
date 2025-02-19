@@ -107,8 +107,14 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 
 func (h *Handler) Verify(c *fiber.Ctx) error {
 	code := c.Query("code")
+	var req struct {
+		Code string `json:"code"`
+	}
 	if code == "" {
-		return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request"))
+		if err := c.BodyParser(&req); err != nil {
+			return utils.WriteError(c, http.StatusBadRequest, fmt.Errorf("invalid request, verification code required"))
+		}
+		code = req.Code
 	}
 
 	// Get user from token
@@ -118,6 +124,7 @@ func (h *Handler) Verify(c *fiber.Ctx) error {
 	}
 
 	userId := claims["userId"].(float64)
+
 	user, err := h.store.GetUserById(uint(userId))
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
@@ -143,11 +150,14 @@ func (h *Handler) Verify(c *fiber.Ctx) error {
 func (h *Handler) GetVerificationCode(c *fiber.Ctx) error {
 	// Get user from token
 	_, claims, err := utils.ParseJWT(c.Cookies("token"))
+	token := c.Cookies("token")
+
 	if err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
+		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("token: %s invalid token %v", token, err))
 	}
 
 	userId := claims["userId"].(float64)
+
 	user, err := h.store.GetUserById(uint(userId))
 	if err != nil {
 		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("no user found"))
