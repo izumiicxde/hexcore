@@ -1,5 +1,11 @@
+import { ThemeToggle } from "@/components/theme-toggler";
+
 const page = () => {
-  return <div>Home page</div>;
+  return (
+    <div>
+      <ThemeToggle />
+    </div>
+  );
 };
 
 export default page;
