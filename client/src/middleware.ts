@@ -1,33 +1,34 @@
 import { NextResponse, NextRequest } from "next/server";
 
-const secret = process.env.DB_JWT_SECRET!;
+const protectedRoutes = ["/", "/class/", "/verify"];
 
-export async function middleware(req: NextRequest) {
+const isProtectedRoute = (pathname: string): boolean =>
+  protectedRoutes.some((route) => pathname.startsWith(route));
+
+export async function authMiddleware(req: NextRequest) {
   try {
     const token = req.cookies.get("token");
-    const isAuthenticated = !!token?.value;
+    const isAuthenticated = Boolean(token?.value);
     const { pathname } = req.nextUrl;
 
-    if (
-      !isAuthenticated &&
-      (pathname === "/" || pathname.startsWith("/class/"))
-    ) {
+    if (!isAuthenticated && isProtectedRoute(pathname)) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
     if (
       isAuthenticated &&
-      (pathname.startsWith("/login") || pathname.startsWith("/signup"))
+      ["/login", "/signup"].some((route) => pathname.startsWith(route))
     ) {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
     return NextResponse.next();
-  } catch {
+  } catch (error) {
+    console.error("Middleware error:", error);
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
 export const config = {
-  matcher: ["/", "/class/:path*", "/login", "/signup"], // Protected routes
+  matcher: ["/", "/class/:path*", "/login", "/signup"],
 };
