@@ -5,7 +5,7 @@ export default function AuthLayout({
 }>) {
   return (
     <div className="flex justify-center items-center overflow-hidden h-screen w-screen p-5">
-      {children};
+      {children}
     </div>
   );
 }
