@@ -36,7 +36,7 @@ type ClassSchedule struct {
 
 type User struct {
 	gorm.Model
-	Username          string    `gorm:"unique" json:"username" validate:"required,min=4,max=24"`
+	Register          string    `gorm:"unique" json:"registerNo" validate:"required,min=12,max=12"`
 	Email             string    `gorm:"unique" json:"email" validate:"required,email"`
 	Fullname          string    `json:"fullname" validate:"required,min=4,max=24"`
 	Password          string    `json:"password" validate:"required"` // Hashed password

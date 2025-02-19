@@ -29,7 +29,7 @@ func (s *Store) CreateUser(user *types.User) error {
 	if err := tx.Create(user).Error; err != nil {
 		tx.Rollback()
 		if strings.Contains(err.Error(), "duplicate key value") {
-			return fmt.Errorf("user with this email or username already exists")
+			return fmt.Errorf("user with this email or register number already exists")
 		}
 		return err
 	}
@@ -53,7 +53,7 @@ func (s *Store) CreateUser(user *types.User) error {
 
 func (s *Store) GetUserByIdentifier(identifier string) (*types.User, error) {
 	user := new(types.User)
-	if err := s.db.Where("email = ? OR username = ?", identifier, identifier).First(user).Error; err != nil {
+	if err := s.db.Where("email = ? OR register = ?", identifier, identifier).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("user not found")
 		}

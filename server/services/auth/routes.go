@@ -56,7 +56,7 @@ func (h *Handler) Signup(c *fiber.Ctx) error {
 	}
 
 	// Send verification email
-	if err = mail.SendMail(user.Email, user.Username, user.VerificationToken); err != nil {
+	if err = mail.SendMail(user.Email, user.Register, user.VerificationToken); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending verification email"))
 	}
 
@@ -163,7 +163,7 @@ func (h *Handler) GetVerificationCode(c *fiber.Ctx) error {
 	user.IsVerified = false
 
 	// Send email
-	if err := mail.SendMail(user.Email, user.Username, code); err != nil {
+	if err := mail.SendMail(user.Email, user.Register, code); err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, fmt.Errorf("error sending email"))
 	}
 	if err := h.store.UpdateUser(user); err != nil {
