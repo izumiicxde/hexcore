@@ -1,24 +1,25 @@
 import { NextResponse, NextRequest } from "next/server";
 
-const protectedRoutes = ["/", "/class/", "/verify"];
+const protectedRoutes = ["/", "/class/", "/verify/"];
 
 const isProtectedRoute = (pathname: string): boolean =>
   protectedRoutes.some((route) => pathname.startsWith(route));
 
-export async function authMiddleware(req: NextRequest) {
+export default function middleware(req: NextRequest) {
   try {
-    const token = req.cookies.get("token");
-    const isAuthenticated = Boolean(token?.value);
+    const token = req.cookies.get("token")?.value;
+    const isAuthenticated = Boolean(token);
     const { pathname } = req.nextUrl;
 
-    if (!isAuthenticated && isProtectedRoute(pathname)) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    if (!isAuthenticated) {
+      if (pathname === "/login" || pathname === "/signup")
+        return NextResponse.next();
+      if (isProtectedRoute(pathname)) {
+        return NextResponse.redirect(new URL("/login", req.url));
+      }
     }
 
-    if (
-      isAuthenticated &&
-      ["/login", "/signup"].some((route) => pathname.startsWith(route))
-    ) {
+    if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
@@ -30,5 +31,5 @@ export async function authMiddleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/class/:path*", "/login", "/signup"],
+  matcher: ["/", "/class/:path*", "/login", "/signup", "/verify"],
 };

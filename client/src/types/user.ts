@@ -6,10 +6,10 @@ export interface IAPIResponse {
 
 export interface IUser {
   ID: number;
-  Username: string;
-  Email: string;
-  Role: string;
-  IsVerified: boolean;
-  Fullname: string;
+  register_no: string;
+  email: string;
+  role: string;
+  isVerified: boolean;
+  fullname: string;
   CreatedAt: Date;
 }

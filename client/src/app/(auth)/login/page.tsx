@@ -19,6 +19,8 @@ import { loginFormSchema } from "@/schemas/user";
 import Link from "next/link";
 import { useState } from "react";
 import { Loader2Icon } from "lucide-react";
+import { userStore } from "@/store/user";
+import { IAPIResponse } from "@/types/user";
 
 const defaultValues: z.infer<typeof loginFormSchema> = {
   identifier: "",
@@ -26,8 +28,10 @@ const defaultValues: z.infer<typeof loginFormSchema> = {
 };
 
 export default function LoginForm() {
-  const router = useRouter();
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const { setUser } = userStore();
+
+  const router = useRouter();
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
     defaultValues,
@@ -48,7 +52,7 @@ export default function LoginForm() {
         body: JSON.stringify(values),
       });
 
-      const data = await response.json();
+      const data: IAPIResponse = await response.json();
       if (!response.ok) {
         toast({
           title: "login error",
@@ -59,7 +63,11 @@ export default function LoginForm() {
       toast({
         title: "Successfully logged in",
       });
-      router.push("/");
+
+      if (data.user) setUser(data.user); // set user state
+
+      if (data.user?.isVerified) router.push("/");
+      else router.push("/verify");
     } catch (error) {
       toast({
         title: "error logging in, please try again later",

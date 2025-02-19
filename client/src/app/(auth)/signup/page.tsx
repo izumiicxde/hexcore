@@ -69,7 +69,7 @@ export default function SignupForm() {
       });
 
       if (data.user) setUser(data.user); // set the user state
-      router.push("/");
+      router.push("/verify");
     } catch (error) {
       toast({
         title: "error registering the user",

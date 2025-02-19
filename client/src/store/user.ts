@@ -1,4 +1,5 @@
 import { IUser } from "@/types/user";
+import { persist } from "zustand/middleware";
 import { create } from "zustand";
 
 interface IUserStore {
@@ -6,7 +7,12 @@ interface IUserStore {
   setUser: (state: IUser) => void;
 }
 
-export const userStore = create<IUserStore>((set) => ({
-  user: null,
-  setUser: () => set((state) => ({ user: state.user })),
-}));
+export const userStore = create<IUserStore>()(
+  persist(
+    (set) => ({
+      user: null,
+      setUser: (user) => set(() => ({ user })),
+    }),
+    { name: "user-storage" }
+  )
+);
