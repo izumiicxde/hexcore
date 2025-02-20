@@ -3,7 +3,9 @@ import { ThemeToggle } from "@/components/theme-toggler";
 const page = () => {
   return (
     <div>
-      <ThemeToggle />
+      <nav className="w-full h-fit overflow-hidden">
+        <div className=""></div>
+      </nav>
     </div>
   );
 };
