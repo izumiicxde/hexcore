@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Loader2Icon } from "lucide-react";
-import { userStore } from "@/store/user";
+import { userStore } from "@/store/store";
 import { IAPIResponse } from "@/types/user";
 
 const defaultValues: z.infer<typeof signupSchema> = {

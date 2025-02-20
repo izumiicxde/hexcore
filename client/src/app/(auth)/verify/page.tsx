@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { IAPIResponse } from "@/types/user";
-import { userStore } from "@/store/user";
+import { userStore } from "@/store/store";
 import { MailIcon } from "lucide-react";
 
 export default function Verify() {
