@@ -6,7 +6,7 @@ export interface IAPIResponse {
 
 export interface IUser {
   ID: number;
-  register_no: string;
+  registerNo: string;
   email: string;
   role: string;
   isVerified: boolean;
