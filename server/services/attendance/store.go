@@ -17,10 +17,29 @@ func NewStore(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
+func (s *Store) GetClassesTillToday(userID uint) ([]types.ClassSchedule, error) {
+	var classes []types.ClassSchedule
+
+	err := s.db.
+		Table("schedules").
+		Select("subjects.*, schedules.start_time, schedules.end_time, COALESCE(attendances.status, false) AS status").
+		Joins("JOIN subjects ON schedules.subject_name = subjects.name").
+		Joins("LEFT JOIN attendances ON attendances.subject_id = subjects.id AND DATE(attendances.date) <= CURRENT_DATE").
+		Where("subjects.user_id = ?", userID).
+		Order("schedules.start_time ASC").
+		Scan(&classes).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch classes: %v", err)
+	}
+
+	return classes, nil
+}
+
 func (s *Store) GetTodaysClasses(userID uint) ([]types.ClassSchedule, error) {
 	today := time.Now().Weekday().String()
 
-	classes, err := s.GetClassesByDay(today)
+	classes, err := s.GetClassesByDay(today, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch classes for %s: %v", today, err)
 	}
@@ -28,7 +47,7 @@ func (s *Store) GetTodaysClasses(userID uint) ([]types.ClassSchedule, error) {
 }
 
 // GetClassesByDay fetches the subjects for a given day provided in query params.
-func (s *Store) GetClassesByDay(day string) ([]types.ClassSchedule, error) {
+func (s *Store) GetClassesByDay(day string, userID uint) ([]types.ClassSchedule, error) {
 	var classes []types.ClassSchedule
 
 	// Validate the day input
@@ -40,18 +59,18 @@ func (s *Store) GetClassesByDay(day string) ([]types.ClassSchedule, error) {
 		return nil, fmt.Errorf("invalid day provided: %s", day)
 	}
 
-	// Query schedules and subjects for the given day
+	// Query schedules, subjects, and attendance status for today
 	err := s.db.
 		Table("schedules").
-		Select("subjects.*, schedules.start_time, schedules.end_time").
+		Select("subjects.*, schedules.start_time, schedules.end_time, COALESCE(attendances.status, false) AS status").
 		Joins("JOIN subjects ON schedules.subject_name = subjects.name").
-		Where("schedules.day = ?", day).
+		Joins("LEFT JOIN attendances ON attendances.subject_id = subjects.id AND DATE(attendances.date) = CURRENT_DATE").
+		Where("schedules.day = ? AND subjects.user_id = ?", day, userID).
 		Scan(&classes).Error
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch classes for %s: %v", day, err)
 	}
-
 	return classes, nil
 }
 

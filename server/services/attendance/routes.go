@@ -30,6 +30,27 @@ func (h *Handler) RegisterRoutes(router fiber.Router) {
 	attendance.Get("/skippable", h.CalculateSkippableClasses)
 	attendance.Get("/is-marked/:subjectId", h.IsAttendanceMarked)
 	attendance.Get("/day", h.GetClassesByDay)
+	attendance.Get("/progress", h.HandleGetClassesTillToday)
+}
+
+func (h *Handler) HandleGetClassesTillToday(c *fiber.Ctx) error {
+	// Retrieve userID from context (assuming middleware sets it)
+	userID, ok := c.Locals("userID").(uint)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Unauthorized"})
+	}
+
+	// Fetch all classes till today
+	classes, err := h.store.GetClassesTillToday(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+	}
+
+	// Send response
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Fetched classes",
+		"classes": classes,
+	})
 }
 
 func (h *Handler) GetClassesByDay(c *fiber.Ctx) error {
@@ -41,7 +62,7 @@ func (h *Handler) GetClassesByDay(c *fiber.Ctx) error {
 
 	day = strings.ToUpper(day[:1]) + strings.ToLower(day[1:]) // Normalize to title case
 
-	classes, err := h.store.GetClassesByDay(day)
+	classes, err := h.store.GetClassesByDay(day, 0)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -50,14 +71,8 @@ func (h *Handler) GetClassesByDay(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetTodaysClasses(c *fiber.Ctx) error {
-	_, claims, err := utils.ParseJWT(c.Cookies("token"))
-	if err != nil {
-		return utils.WriteError(c, http.StatusUnauthorized, fmt.Errorf("invalid token"))
-	}
-	userId := claims["userId"].(uint)
-
+	userId := c.Locals("userId").(uint)
 	classes, err := h.store.GetTodaysClasses(userId)
-	fmt.Println("classes", classes, "userId", userId)
 	if err != nil {
 		return utils.WriteError(c, http.StatusInternalServerError, err)
 	}
@@ -94,7 +109,7 @@ func (h *Handler) GetAttendanceSummary(c *fiber.Ctx) error {
 		return utils.WriteError(c, http.StatusInternalServerError, err)
 	}
 
-	return utils.WriteJSON(c, http.StatusOK, summary)
+	return utils.WriteJSON(c, http.StatusOK, fiber.Map{"message": "fetched user details", "success": true, "summary": summary})
 }
 
 func (h *Handler) CalculateSkippableClasses(c *fiber.Ctx) error {

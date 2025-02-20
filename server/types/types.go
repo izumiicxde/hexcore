@@ -7,8 +7,9 @@ import (
 )
 
 type AttendanceStore interface {
+	GetClassesTillToday(userID uint) ([]ClassSchedule, error)
 	GetTodaysClasses(userID uint) ([]ClassSchedule, error)
-	GetClassesByDay(day string) ([]ClassSchedule, error)
+	GetClassesByDay(day string, userID uint) ([]ClassSchedule, error)
 	MarkAttendance(userID uint, subjectID uint, status bool) error
 	GetAttendanceSummary(userID uint) (map[string]interface{}, error)
 	CalculateSkippableClasses(userID uint) (map[string]int, error)
@@ -30,6 +31,7 @@ type LoginRequest struct {
 
 type ClassSchedule struct {
 	Subject
+	Status    bool   `json:"status"`
 	StartTime string `json:"start_time"`
 	EndTime   string `json:"end_time"`
 }
